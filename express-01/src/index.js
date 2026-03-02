@@ -1,14 +1,10 @@
-import "dontenv/config";
+import "dotenv/config";
 import express from "express";
 
 const app = express();
 
 app.get("/", (req, res) => {
-    res.send("Hello World!");
+  res.send("Servidor rodando!\n" + process.env.MESSAGE);
 });
 
-const port = process.env.PORT ?? 3000;
-
-app.listen(3000, () =>
-    console.log("Example app listening on port 3000!/n" + process.env.MESSAGE)
-);
+export default app;

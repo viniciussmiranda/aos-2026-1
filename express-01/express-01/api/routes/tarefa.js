@@ -4,9 +4,9 @@ import * as tarefaController from "../controllers/tarefaController.js";
 const router = Router();
 
 router.get("/", tarefaController.getAll);
-router.get("/:objectId", tarefaController.getOne);
+router.get("/:tarefaId", tarefaController.getOne);
 router.post("/", tarefaController.create);
-router.put("/:objectId", tarefaController.update);
-router.delete("/:objectId", tarefaController.remove);
+router.put("/:tarefaId", tarefaController.update);
+router.delete("/:tarefaId", tarefaController.remove);
 
 export default router;

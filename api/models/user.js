@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 
-const User = (sequelize) =>
-  sequelize.define("user", {
+const User = (sequelize) => {
+  const model = sequelize.define("user", {
     username: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -12,5 +12,14 @@ const User = (sequelize) =>
       unique: true,
     },
   });
+
+  model.findByLogin = async (login) => {
+    return await model.findOne({
+      where: { username: login },
+    });
+  };
+
+  return model;
+};
 
 export default User;

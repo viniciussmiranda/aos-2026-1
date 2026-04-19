@@ -1,7 +1,13 @@
 {
   "version": 2,
   "builds": [
-    { "src": "express-01/api/index.js", "use": "@vercel/node" }
+    { 
+      "src": "express-01/api/index.js", 
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["express-01/node_modules/**"]
+      }
+    }
   ],
   "routes": [
     { "src": "/(.*)", "dest": "express-01/api/index.js" }

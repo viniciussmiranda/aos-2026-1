@@ -1,19 +1,51 @@
 import { Router } from "express";
-import { AppError } from "../errors/AppError.js";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import db from "../models/index.js";
 
 const router = Router();
 
-router.get("/", async (req, res, next) => {
-  try {
-    const user = await req.context.models.User.findByPk(req.context.me.id);
+// ── Funções reutilizáveis (serão usadas também na rota de refresh) ──────────
 
+export function generateAccessToken(userId) {
+  return jwt.sign(
+    { sub: userId },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" }
+  );
+}
+
+export async function generateRefreshToken(userId) {
+  const token = crypto.randomBytes(40).toString("hex");
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 dias
+
+  await db.refreshToken.create({ token, expiresAt, userId });
+
+  return token;
+}
+
+// ── POST /session ───────────────────────────────────────────────────────────
+
+router.post("/", async (req, res) => {
+  try {
+    const { login, password } = req.body;
+
+    const user = await db.user.findByLogin(login);
     if (!user) {
-      throw new AppError("Session user not found", 404);
+      return res.status(401).json({ error: "Credenciais inválidas." });
     }
 
-    return res.status(200).json(user);
+    const valid = await user.validatePassword(password);
+    if (!valid) {
+      return res.status(401).json({ error: "Credenciais inválidas." });
+    }
+
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = await generateRefreshToken(user.id);
+
+    return res.status(201).json({ accessToken, refreshToken });
   } catch (err) {
-    next(err);
+    return res.status(500).json({ error: err.message });
   }
 });
 

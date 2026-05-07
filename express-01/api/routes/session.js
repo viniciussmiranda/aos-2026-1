@@ -1,11 +1,8 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import db from "../models/index.js";
 
 const router = Router();
-
-// ── Funções reutilizáveis (serão usadas também na rota de refresh) ──────────
 
 export function generateAccessToken(userId) {
   return jwt.sign(
@@ -15,22 +12,20 @@ export function generateAccessToken(userId) {
   );
 }
 
-export async function generateRefreshToken(userId) {
+export async function generateRefreshToken(userId, models) {
   const token = crypto.randomBytes(40).toString("hex");
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 dias
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  await db.refreshToken.create({ token, expiresAt, userId });
+  await models.RefreshToken.create({ token, expiresAt, userId });
 
   return token;
 }
 
-// ── POST /session ───────────────────────────────────────────────────────────
-
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   try {
     const { login, password } = req.body;
 
-    const user = await db.user.findByLogin(login);
+    const user = await req.context.models.User.findByLogin(login);
     if (!user) {
       return res.status(401).json({ error: "Credenciais inválidas." });
     }
@@ -41,11 +36,11 @@ router.post("/", async (req, res) => {
     }
 
     const accessToken = generateAccessToken(user.id);
-    const refreshToken = await generateRefreshToken(user.id);
+    const refreshToken = await generateRefreshToken(user.id, req.context.models);
 
     return res.status(201).json({ accessToken, refreshToken });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 

@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import models, { sequelize } from "./models/index.js";
 import routes from "./routes/index.js";
+import authMiddleware from "./middlewares/auth.js";
 
 const app = express();
 app.set("trust proxy", true);
@@ -13,22 +14,22 @@ app.use(express.urlencoded({ extended: true }));
 app.use(async (req, res, next) => {
   try {
     await sequelize.authenticate();
-    req.context = {
-      models,
-      me: await models.User.findByLogin("rwieruch").catch(() => null),
-    };
+    req.context = { models };
     next();
   } catch (err) {
     next(err);
   }
 });
 
+app.use("/session", routes.session);
+
+app.use(authMiddleware);
+
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path} - ${req.ip}`);
   next();
 });
 
-app.use("/session", routes.session);
 app.use("/users", routes.user);
 app.use("/messages", routes.message);
 app.use("/tarefas", routes.tarefa);
